@@ -1,0 +1,18 @@
+{
+  "name": "fintrack-analytics",
+  "version": "1.0.0",
+  "description": "Self-hosted transaction analytics with admin and staff panels, encrypted API key storage and multi-currency reporting.",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "chart.js": "4.4.1",
+    "express": "^4.21.2"
+  }
+}
