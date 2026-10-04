@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FinTrack Analytics</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2316233B'/><path d='M7 22l6-7 5 4 7-9' stroke='%233DB397' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<link rel="stylesheet" href="styles.css">
+<script src="vendor/chart.umd.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<div id="boot" class="boot">Loading…</div>
+
+<!-- Sign in / first-run setup -->
+<div id="auth" class="auth" hidden>
+  <div class="auth-card">
+    <div class="logo-row"><span class="logo" aria-hidden="true"></span><span id="auth-org">FinTrack Analytics</span></div>
+    <form id="login-form" hidden>
+      <h1>Sign in</h1>
+      <label for="li-user">Username</label><input id="li-user" autocomplete="username" required>
+      <label for="li-pass">Password</label><input id="li-pass" type="password" autocomplete="current-password" required>
+      <button class="btn btn-primary btn-block" type="submit">Sign in</button>
+      <p class="form-err" id="li-err" role="alert"></p>
+    </form>
+    <form id="setup-form" hidden>
+      <h1>Set up your workspace</h1>
+      <p class="muted">Create the first admin account. Admins add data sources and API keys, manage staff and set currency and risk rules.</p>
+      <label for="su-org">Organisation name</label><input id="su-org" value="FinTrack Analytics">
+      <div class="row2">
+        <div><label for="su-user">Admin username</label><input id="su-user" autocomplete="username" required></div>
+        <div><label for="su-name">Full name</label><input id="su-name"></div>
+      </div>
+      <label for="su-pass">Password</label><input id="su-pass" type="password" autocomplete="new-password" required>
+      <p class="field-hint">At least 10 characters with letters and numbers.</p>
+      <label for="su-cur">Reporting currency</label>
+      <select id="su-cur"></select>
+      <label class="check"><input type="checkbox" id="su-demo" checked> Add a demo data source so I can explore right away</label>
+      <button class="btn btn-primary btn-block" type="submit">Create admin account</button>
+      <p class="form-err" id="su-err" role="alert"></p>
+    </form>
+  </div>
+</div>
+
+<!-- Application shell -->
+<div id="shell" hidden>
+  <header class="appbar">
+    <div class="appbar-left">
+      <span class="logo" aria-hidden="true"></span>
+      <strong id="org-name">FinTrack Analytics</strong>
+      <nav class="mode" id="mode-nav">
+        <button data-mode="analytics" aria-pressed="true">Analytics</button>
+        <button data-mode="admin" aria-pressed="false" id="admin-btn" hidden>Admin</button>
+      </nav>
+    </div>
+    <div class="appbar-right">
+      <label class="cur-pick" for="rep-cur">Show amounts in <select id="rep-cur"></select></label>
+      <div class="usermenu">
+        <button id="user-btn" aria-haspopup="true" aria-expanded="false"><span id="user-name"></span><span class="role" id="user-role"></span></button>
+        <div class="menu" id="user-menu" hidden>
+          <button id="pw-btn">Change password</button>
+          <button id="logout-btn">Sign out</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Analytics -->
+  <div id="view-analytics" class="analytics">
+    <aside class="filters">
+      <section>
+        <h2>Data</h2>
+        <label for="f-source">Data source</label>
+        <select id="f-source"><option value="">All my sources</option></select>
+        <div class="src-status" id="src-status"></div>
+        <button class="btn btn-line btn-block" id="reload-btn">Reload data</button>
+      </section>
+      <section>
+        <h2>Period</h2>
+        <div class="quick" id="quick-range">
+          <button data-r="1">24h</button><button data-r="7">7 days</button><button data-r="30">30 days</button><button data-r="0" aria-pressed="true">All</button>
+        </div>
+        <label for="f-from">From</label><input id="f-from" type="datetime-local">
+        <label for="f-to">To</label><input id="f-to" type="datetime-local">
+      </section>
+      <section>
+        <h2>Filters</h2>
+        <label for="f-user">User contains</label><input id="f-user" placeholder="User ID">
+        <label for="f-ben">Beneficiary contains</label><input id="f-ben" placeholder="ID, name or bank">
+        <div class="row2">
+          <div><label for="f-min">Min amount</label><input id="f-min" type="number" step="any"></div>
+          <div><label for="f-max">Max amount</label><input id="f-max" type="number" step="any"></div>
+        </div>
+        <p class="field-hint" id="amt-hint">In reporting currency</p>
+        <label for="f-cur">Original currency</label><select id="f-cur"><option value="">All</option></select>
+        <div class="row2">
+          <div><label for="f-status">Status</label><select id="f-status"><option value="">All</option></select></div>
+          <div><label for="f-channel">Channel</label><select id="f-channel"><option value="">All</option></select></div>
+        </div>
+        <div class="row2">
+          <div><label for="f-sc">From country</label><select id="f-sc"><option value="">All</option></select></div>
+          <div><label for="f-bc">To country</label><select id="f-bc"><option value="">All</option></select></div>
+        </div>
+        <label for="f-scope">Scope</label>
+        <select id="f-scope"><option value="">Domestic and cross-border</option><option value="cross">Cross-border only</option><option value="dom">Domestic only</option></select>
+        <label for="f-q">Search any field</label><input id="f-q" placeholder="Transaction ID, reason…">
+        <button class="btn btn-line btn-block" id="f-reset">Clear filters</button>
+      </section>
+    </aside>
+    <main class="main">
+      <div class="topbar">
+        <div><h1>Transaction analytics</h1><p id="subtitle" class="muted">Loading data…</p></div>
+        <div class="actions">
+          <button class="btn btn-line" id="exp-summary">Export report</button>
+          <button class="btn btn-line" id="exp-data">Export transactions</button>
+          <button class="btn btn-line" id="print-btn">Print</button>
+        </div>
+      </div>
+      <div id="fx-note"></div>
+      <div id="a-empty" class="empty" hidden></div>
+      <div id="a-work">
+        <nav class="tabs" id="a-tabs">
+          <button data-tab="overview" aria-selected="true">Overview</button>
+          <button data-tab="growth" aria-selected="false">Growth</button>
+          <button data-tab="bens" aria-selected="false">Beneficiaries</button>
+          <button data-tab="users" aria-selected="false">Users</button>
+          <button data-tab="fx" aria-selected="false">Currencies</button>
+          <button data-tab="corr" aria-selected="false">Corridors</button>
+          <button data-tab="fees" aria-selected="false">Fees &amp; revenue</button>
+          <button data-tab="ops" aria-selected="false">Speed &amp; operations</button>
+          <button data-tab="risk" aria-selected="false">Risk &amp; compliance<span class="count" id="risk-count" hidden></span></button>
+          <button data-tab="txns" aria-selected="false">Transactions</button>
+        </nav>
+        <section class="panel active" data-panel="overview"></section>
+        <section class="panel" data-panel="growth"></section>
+        <section class="panel" data-panel="bens"></section>
+        <section class="panel" data-panel="users"></section>
+        <section class="panel" data-panel="fx"></section>
+        <section class="panel" data-panel="corr"></section>
+        <section class="panel" data-panel="fees"></section>
+        <section class="panel" data-panel="ops"></section>
+        <section class="panel" data-panel="risk"></section>
+        <section class="panel" data-panel="txns"></section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Admin -->
+  <div id="view-admin" class="admin" hidden>
+    <div class="admin-inner">
+      <div class="topbar"><div><h1>Admin</h1><p class="muted">Manage data sources and API keys, staff access, currencies and risk rules.</p></div></div>
+      <nav class="tabs" id="ad-tabs">
+        <button data-tab="sources" aria-selected="true">Data sources &amp; API keys</button>
+        <button data-tab="users" aria-selected="false">Users &amp; access</button>
+        <button data-tab="fx" aria-selected="false">Currencies &amp; FX</button>
+        <button data-tab="risk" aria-selected="false">Risk rules</button>
+        <button data-tab="org" aria-selected="false">Organisation</button>
+        <button data-tab="audit" aria-selected="false">Audit log</button>
+      </nav>
+      <section class="panel active" data-apanel="sources"></section>
+      <section class="panel" data-apanel="users"></section>
+      <section class="panel" data-apanel="fx"></section>
+      <section class="panel" data-apanel="risk"></section>
+      <section class="panel" data-apanel="org"></section>
+      <section class="panel" data-apanel="audit"></section>
+    </div>
+  </div>
+</div>
+
+<dialog id="modal"><div id="modal-body"></div></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
